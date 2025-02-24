@@ -11,14 +11,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def run_model(model_name, device):
-    model, transform = clip.load(
-        model_name, device=get_device_initial(device), jit=False
-    )
-
-    image = transform(Image.open("CLIP.png")).unsqueeze(0).to(device)
-    text = clip.tokenize(["a diagram", "a dog", "a cat"]).to(device)
-
+def run_model(model, image, text):
     with torch.no_grad():
         start_time = time.perf_counter()
 
@@ -32,10 +25,22 @@ def run_model(model_name, device):
 
 def run_n_times(model_name, device, n):
     times = []
-    logger.info(f"Running {model_name} on {device} {n} times")
+    logger.info(f"===Running {model_name} on {device} {n} times===")
+
+    logger.debug(f"Loading model {model_name} on {device}")
+    model, transform = clip.load(
+        model_name, device=get_device_initial(device), jit=False
+    )
+    logger.debug("Model loaded")
+
+    logger.debug("Loading image and text")
+    image = transform(Image.open("CLIP.png")).unsqueeze(0).to(device)
+    text = clip.tokenize(["a diagram", "a dog", "a cat"]).to(device)
+    logger.debug("Image and text loaded")
+
     for _ in range(n):
         logger.info(f"Run {_ + 1} of {n}")
-        _, time = run_model(model_name, device)
+        _, time = run_model(model, image, text)
         times.append(time)
     return np.mean(times)
 
